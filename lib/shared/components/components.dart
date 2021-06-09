@@ -286,3 +286,10 @@ Widget articleBuilder(list,context) => ConditionalBuilder(
         itemCount: 10,),
   fallback: (context) => Center(child: CircularProgressIndicator()),
 );
+
+void navigateTo(context, widget) => Navigator.push(
+    context,
+    MaterialPageRoute(
+        builder: (context) => widget,
+    )
+);

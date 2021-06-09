@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hexcolor/hexcolor.dart';
+import 'package:udemy_flutter/layout/news_app/cubit/cubit.dart';
 import 'package:udemy_flutter/layout/news_app/news_layout.dart';
 import 'package:udemy_flutter/layout/todo_app/todo_layout.dart';
 import 'package:udemy_flutter/modules/bmi_result/bmi_result_screen.dart';
@@ -46,10 +47,19 @@ class MyApp extends StatelessWidget
   MyApp(this.isDark);
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (BuildContext context) => AppCubit()..changeAppMode(
-        fromShared: isDark,
-      ),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (context) => NewsCubit()
+            ..getBusiness()
+            ..getSports()..
+            getScience(),),
+        BlocProvider(
+        create: (BuildContext context) => AppCubit()
+          ..changeAppMode(
+          fromShared: isDark,
+        ),)
+        ],
       child: BlocConsumer<AppCubit, AppStates>(
         listener: (context, state){},
         builder: (context, state){

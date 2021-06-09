@@ -12,6 +12,7 @@ class NewsCubit extends Cubit<NewsStates>
 {
   NewsCubit () : super(NewsInitialState());
 
+
   static NewsCubit get(context) => BlocProvider.of(context);
 
   int currentIndex = 0;
@@ -125,6 +126,29 @@ class NewsCubit extends Cubit<NewsStates>
     }else{
       emit(NewsGetScienceSuccessState());
     }
+
+  }
+
+  List<dynamic> search = [];
+
+  void getSearch(String value)
+  {
+    emit(NewsGetSearchLoadingState());
+
+    DioHelper.getData(
+        url: 'v2/everything',
+        query: {
+          'q':'$value',
+          'apiKey':'1de04cf6f9ce4ce683c474a2bb10d67a',
+        }
+    ).then((value){
+      search = value.data['articles'];
+      print(search[0]['title']);
+      emit(NewsGetSearchSuccessState());
+    }).catchError((error){
+      print(error.toString());
+      emit(NewsGetSearchErrorState(error.toString()));
+    });
 
   }
 
