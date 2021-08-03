@@ -5,20 +5,20 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hexcolor/hexcolor.dart';
 import 'package:udemy_flutter/layout/news_app/cubit/cubit.dart';
 import 'package:udemy_flutter/layout/news_app/news_layout.dart';
+import 'package:udemy_flutter/layout/shop_app/cubit/cubit.dart';
+import 'package:udemy_flutter/layout/shop_app/shop_layout.dart';
 import 'package:udemy_flutter/layout/todo_app/todo_layout.dart';
-import 'package:udemy_flutter/modules/bmi_result/bmi_result_screen.dart';
-import 'package:udemy_flutter/modules/bmi/bmi_screen.dart';
-import 'package:udemy_flutter/modules/counter/counter_screen.dart';
-import 'package:udemy_flutter/modules/login/login_screen.dart';
-import 'package:udemy_flutter/modules/messenger/messenger_screen.dart';
-import 'package:udemy_flutter/modules/users/users_screen.dart';
+import 'package:udemy_flutter/modules/shop_app/login/shop_login_screen.dart';
+import 'package:udemy_flutter/modules/shop_app/on_boarding/on_boarding_screen.dart';
 import 'package:udemy_flutter/shared/bloc_observer.dart';
+import 'package:udemy_flutter/shared/components/constants.dart';
 import 'package:udemy_flutter/shared/cubit/cubit.dart';
 import 'package:udemy_flutter/shared/cubit/states.dart';
 import 'package:udemy_flutter/shared/network/local/cache_helper.dart';
 import 'package:udemy_flutter/shared/network/remote/dio_helper.dart';
+import 'package:udemy_flutter/shared/styles/themes.dart';
 
-import 'modules/home/home_screen.dart';
+
 
 void main() async
 {
@@ -29,9 +29,28 @@ void main() async
   DioHelper.init();
   await CacheHelper.init();
 
-  bool isDark = CacheHelper.getBoolean(key: 'isDark');
+  bool isDark = CacheHelper.getData(key: 'isDark');
 
-  runApp(MyApp(isDark));
+  Widget widget;
+
+  bool onBoarding = CacheHelper.getData(key: 'onBoarding');
+  token = CacheHelper.getData(key: 'token');
+  print(token);
+
+  if(onBoarding != null)
+  {
+    if(token != null) widget = ShopLayout();
+    else widget = ShopLoginScreen();
+  }else
+    {
+      widget = OnBoardingScreen();
+    }
+
+
+  runApp(MyApp(
+    isDark:isDark,
+    startWidget: widget,
+  ));
 }
 
 //Stateless
@@ -43,8 +62,12 @@ class MyApp extends StatelessWidget
 {
 
   final bool isDark;
+  final Widget startWidget;
 
-  MyApp(this.isDark);
+  MyApp({
+    this.isDark,
+    this.startWidget
+  });
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
@@ -58,93 +81,21 @@ class MyApp extends StatelessWidget
         create: (BuildContext context) => AppCubit()
           ..changeAppMode(
           fromShared: isDark,
-        ),)
+        ),),
+        BlocProvider(
+          create: (BuildContext context) => ShopCubit()..getHomeData()..getCategories()..getFavorites()..getUserData(),
+          ),
         ],
       child: BlocConsumer<AppCubit, AppStates>(
         listener: (context, state){},
         builder: (context, state){
           return MaterialApp(
             debugShowCheckedModeBanner: false,
-            theme: ThemeData(
-              primarySwatch: Colors.deepOrange,
-              scaffoldBackgroundColor: Colors.white,
-              appBarTheme: AppBarTheme(
-                titleSpacing: 20.0,
-                backwardsCompatibility: false,
-                systemOverlayStyle: SystemUiOverlayStyle(
-                  statusBarColor: Colors.white,
-                  statusBarIconBrightness: Brightness.dark,
-                ),
-                backgroundColor: Colors.white,
-                elevation: 0.0,
-                titleTextStyle: TextStyle(
-                  color: Colors.black,
-                  fontSize: 20.0,
-                  fontWeight: FontWeight.bold,
-                ),
-                iconTheme: IconThemeData(
-                  color: Colors.black,
-                ),
-              ),
-              bottomNavigationBarTheme: BottomNavigationBarThemeData(
-                type: BottomNavigationBarType.fixed,
-                selectedItemColor: Colors.deepOrange,
-                unselectedItemColor: Colors.grey,
-                elevation: 20.0,
-                backgroundColor: Colors.white,
-              ),
-              floatingActionButtonTheme: FloatingActionButtonThemeData(
-                backgroundColor: Colors.deepOrange,
-              ),
-              textTheme: TextTheme(
-                bodyText1: TextStyle(
-                  fontSize: 18.0,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black,
-                ),
-              ),
-            ),
-            darkTheme: ThemeData(
-              primarySwatch: Colors.deepOrange,
-              scaffoldBackgroundColor: HexColor('333739'),
-              appBarTheme: AppBarTheme(
-                titleSpacing: 20.0,
-                backwardsCompatibility: false,
-                systemOverlayStyle: SystemUiOverlayStyle(
-                  statusBarColor: HexColor('333739'),
-                  statusBarIconBrightness: Brightness.light,
-                ),
-                backgroundColor: HexColor('333739'),
-                elevation: 0.0,
-                titleTextStyle: TextStyle(
-                  color: Colors.white,
-                  fontSize: 20.0,
-                  fontWeight: FontWeight.bold,
-                ),
-                iconTheme: IconThemeData(
-                  color: Colors.white,
-                ),
-              ),
-              bottomNavigationBarTheme: BottomNavigationBarThemeData(
-                type: BottomNavigationBarType.fixed,
-                selectedItemColor: Colors.deepOrange,
-                unselectedItemColor: Colors.grey,
-                elevation: 20.0,
-                backgroundColor: HexColor('333739'),
-              ),
-              floatingActionButtonTheme: FloatingActionButtonThemeData(
-                backgroundColor: Colors.deepOrange,
-              ),
-              textTheme: TextTheme(
-                bodyText1: TextStyle(
-                  fontSize: 18.0,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-            themeMode: AppCubit.get(context).isDark ? ThemeMode.dark : ThemeMode.light,
-            home: NewsLayout(),
+            theme: lightTheme,
+            darkTheme: darkTheme,
+            themeMode: AppCubit.get(context).isDark ? ThemeMode.light : ThemeMode.light,
+            // themeMode: AppCubit.get(context).isDark ? ThemeMode.dark : ThemeMode.light,
+            home: startWidget,
           );
         },
       ),
