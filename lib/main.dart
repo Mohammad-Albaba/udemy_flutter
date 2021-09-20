@@ -1,4 +1,7 @@
 import 'package:bloc/bloc.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -7,10 +10,14 @@ import 'package:udemy_flutter/layout/news_app/cubit/cubit.dart';
 import 'package:udemy_flutter/layout/news_app/news_layout.dart';
 import 'package:udemy_flutter/layout/shop_app/cubit/cubit.dart';
 import 'package:udemy_flutter/layout/shop_app/shop_layout.dart';
+import 'package:udemy_flutter/layout/social_app/cubit/cubit.dart';
+import 'package:udemy_flutter/layout/social_app/social_layout.dart';
 import 'package:udemy_flutter/layout/todo_app/todo_layout.dart';
 import 'package:udemy_flutter/modules/shop_app/login/shop_login_screen.dart';
 import 'package:udemy_flutter/modules/shop_app/on_boarding/on_boarding_screen.dart';
+import 'package:udemy_flutter/modules/social_app/social_login/social_login_screen.dart';
 import 'package:udemy_flutter/shared/bloc_observer.dart';
+import 'package:udemy_flutter/shared/components/components.dart';
 import 'package:udemy_flutter/shared/components/constants.dart';
 import 'package:udemy_flutter/shared/cubit/cubit.dart';
 import 'package:udemy_flutter/shared/cubit/states.dart';
@@ -19,11 +26,41 @@ import 'package:udemy_flutter/shared/network/remote/dio_helper.dart';
 import 'package:udemy_flutter/shared/styles/themes.dart';
 
 
-
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async
+{
+  print('on background message');
+  print(message.data.toString());
+  showToast(text: 'on background message', state: ToastStates.SUCCESS);
+}
 void main() async
 {
   //بيتأكد أن كل حاجة هنا في الميثود خصلت وبعدين يفتح الابلكيشن
   WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp();
+  var token = await FirebaseMessaging.instance.getToken();
+
+  print(token);
+
+  // foreground fcm
+  FirebaseMessaging.onMessage.listen((event)
+  {
+    print('on message');
+    print(event.data.toString());
+    showToast(text: 'on message', state: ToastStates.SUCCESS);
+  });
+
+  // when click on notification to open app
+  FirebaseMessaging.onMessageOpenedApp.listen((event)
+  {
+    print('on message opened app');
+    print(event.data.toString());
+    showToast(text: 'on message opened app', state: ToastStates.SUCCESS);
+
+  });
+
+  // background fcm
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
   Bloc.observer = MyBlocObserver();
   DioHelper.init();
@@ -33,18 +70,26 @@ void main() async
 
   Widget widget;
 
-  bool onBoarding = CacheHelper.getData(key: 'onBoarding');
-  token = CacheHelper.getData(key: 'token');
+  // bool onBoarding = CacheHelper.getData(key: 'onBoarding');
+  // token = CacheHelper.getData(key: 'token');
+  uId = CacheHelper.getData(key: 'uId');
   print(token);
 
-  if(onBoarding != null)
-  {
-    if(token != null) widget = ShopLayout();
-    else widget = ShopLoginScreen();
-  }else
+  // if(onBoarding != null)
+  // {
+  //   if(token != null) widget = ShopLayout();
+  //   else widget = ShopLoginScreen();
+  // }else
+  //   {
+  //     widget = OnBoardingScreen();
+  //   }
+
+  if(uId != null)
     {
-      widget = OnBoardingScreen();
-    }
+      widget = SocialLayout();
+    }else{
+      widget = SocialLoginScreen();
+  }
 
 
   runApp(MyApp(
@@ -85,6 +130,9 @@ class MyApp extends StatelessWidget
         BlocProvider(
           create: (BuildContext context) => ShopCubit()..getHomeData()..getCategories()..getFavorites()..getUserData(),
           ),
+        BlocProvider(
+          create: (BuildContext context) => SocialCubit()..getUserData()..getPosts(),
+        ),
         ],
       child: BlocConsumer<AppCubit, AppStates>(
         listener: (context, state){},
